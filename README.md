@@ -9,6 +9,8 @@ The files are these:
 * VNA-plots: It simulates the above circuit, displaying:
   * The Smith Chart as seen by the nanoVNA
   * The phase of the S11 parameter (reflection coefficient) measured by the nanoVNA
-  * The Bode plot (frequency response) at the output of the nanoVNA (or circuit)
+  * The Bode plot (frequency response) at the output of the nanoVNA (or circuit): Vi/Vs
+ An example of such file is this:
+ 
 
 

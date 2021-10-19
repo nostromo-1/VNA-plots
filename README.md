@@ -20,5 +20,6 @@ The files are these:
 
 * filter_effects.plt: It takes an square wave input signal and passes it through the circuit described above, displaying the output signal at Zl. It does so by computing the Fourier coefficients of the input signal and applying them through the filter (which is the reference circuit above). It plots both input and output signals, calculated at a frequency which can be adjusted in the script, so you can see how different frequencies are affected. Note: the input signal does not look like a perfect square wave, due to the Gibbs phenomenon.
 
-An example of the output is this:
-[![Output](https://github.com/nostromo-1/VNA-plots/blob/main/coax1.png)](https://github.com/nostromo-1/iVNA-plots)
+An example of the output (it simulates a probe with a RG58 coax connected to a scope, with 50 ohm input impedance and 13 pF capacitance) is this:
+
+[![Output](https://github.com/nostromo-1/VNA-plots/blob/main/filter.png)](https://github.com/nostromo-1/iVNA-plots)

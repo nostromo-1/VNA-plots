@@ -10,13 +10,15 @@ The files are these:
 * VNA_plots.plt: It simulates the above circuit, displaying:
   * The Smith Chart as seen by the nanoVNA
   * The phase of the S11 parameter (reflection coefficient) measured by the nanoVNA
-  * The Bode plot (frequency response) at the output of the nanoVNA (or circuit): module of Vi/Vs
+  * The Bode plot (frequency response) at the output of the nanoVNA (or circuit): modulus of Vi/Vs
  
- It can also plot the phase of the frequency response Vi/Vs, and module/phase of the frequency response at Zl.
+ It can also plot the phase of the frequency response Vi/Vs, and modulus/phase of the frequency response at Zl.
  An example of the output is this:
  
- [![Circuit](https://github.com/nostromo-1/VNA-plots/blob/main/coax1.png)](https://github.com/nostromo-1/iVNA-plots)
+ [![Output](https://github.com/nostromo-1/VNA-plots/blob/main/coax1.png)](https://github.com/nostromo-1/iVNA-plots)
  
 
-* filter_effects.plt: It takes an square wave input signal and passes it through the circuit described above, dispaying the output signal at Zl
+* filter_effects.plt: It takes an square wave input signal and passes it through the circuit described above, displaying the output signal at Zl. It does so by computing the Fourier coefficients of the input signal and applying them through the filter (which is the reference circuit above). It plots both input and output signals, calculated at a frequency which can be adjusted in the script, so you can see how different frequencies are affected. Note: the input signal does not look like a perfect square wave, due to the Gibbs phenomenon.
 
+An example of the output is this:
+[![Output](https://github.com/nostromo-1/VNA-plots/blob/main/coax1.png)](https://github.com/nostromo-1/iVNA-plots)

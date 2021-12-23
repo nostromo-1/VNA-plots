@@ -2,6 +2,7 @@
 # It applies the transfer function to the fourier series of the input to generate the output signal
 
 set terminal qt size 900,740 persist
+set multiplot layout 2,1 title "Effect of loaded transmission line on input signal"
 set dummy t
 #unset key
 #unset border
@@ -16,11 +17,11 @@ Zs = 50.0   # output impedance of VNA; the output voltage equivalent is Vs
 
 # Define a transmission line, followed by a load Zl
 Zo = 50.0   # characteristic impedance of transmission line
-k = 0.66    # velocity factor of transmission line
+vf = 0.66   # velocity factor of transmission line
 len = 0.50  # length of transmission line in m
 #Res(f) = 15.38*((f/1e9)**0.482)   # ohm/m due to skin effect, twisted cable, https://ieeexplore.ieee.org/document/917765
-Res(f) = 6.2*((f/1e9)**0.5)   # ohm/m due to skin effect, RG58
-Vp = k*c    # phase velocity in transmission line
+Res(f) = 0.1 + 6.2*((f/1e9)**0.5)   # ohm/m due to skin effect, RG58
+Vp = vf*c    # phase velocity in transmission line
 fl4 = Vp/(4*len)  # lambda/4 frequency of transmission line
 w(f) = 2*pi*f
 beta(f) = w(f)/Vp
@@ -32,10 +33,11 @@ att(f) = 20*log10(exp(1))*alfa(f*1e6)*100   # attenuation in dB/100m
 
 # Define the load circuit at coax end (Zl)
 C = 13e-12
-#L = 160e-9
-R = 50
+L = 10e-6
+R = 50.0
 Yl(f) = 1.0/R + (j*w(f)*C) #+ 1.0/(R+j*w(f)*L) #+ 1.0/220
 Zl(f) = 1.0/Yl(f)
+#Zl(f) = R+j*w(f)*L
 gammaZl(f) = (Zl(f)-Zo)/(Zl(f)+Zo)  # reflection coefficient at load
 # end of load circuit
 
@@ -47,9 +49,9 @@ Zin(f) = Zo * (1.0+gammaZin(f)) / (1.0-gammaZin(f))
 # Zeq is the equivalent impedance seen by the VNA at its output port
 # Zeq can be only Zin (the coax) or combined with another load Z (in parallel or series)
 #L1 = 45e-9
-#R1 = 500
+#R1 = 5000
 #C1 = 4.7e-9
-#Zamp(f) = j*w(f)*L1 + 1.0/(j*w(f)*C1) + R1
+#Zamp(f) = R1 #+ j*w(f)*L1 + 1.0/(j*w(f)*C1) 
 #Yeq(f) = 1.0/Zin(f) + 1.0/Zamp(f) 
 #Zeq(f) = j*w(f)*L1 + 1.0/Ya(f)
 Zeq(f) = Zin(f)
@@ -69,16 +71,16 @@ H(f) = Vratio_Zl(f)
 Heq(f) = Vratio_Zeq(f) 
 
 # define Fourier series coefficients
-N = 50  # number of frequencies to sum in the signal
+N = 30  # number of frequencies to sum in the signal
 array Ck[N]
 # define input signal: a square wave of duty cycle delta, amplitude 1
-delta = 0.5
+if (!exists("delta")) delta = 0.5  # duty cicle
 Ck0 = delta
 do for [k=1:N] { 
         Ck[k] = delta*sinc(k*delta)*exp(-j*pi*k*delta)
 }
 
-freq = 100e6  # fundamental frequency of input signal
+if (!exists("freq")) freq = 10e6  # fundamental frequency of input signal
 period = 1.0/freq
 # calculate input signal input(t), signal at Zeq middle(t), signal at Zl output(t)
 input(t) = Ck0 + sum [k=1:N] 2*real(Ck[k]*exp(j*k*w(freq)*t)) 
@@ -86,16 +88,28 @@ middle(t) = Ck0*Heq(1e-6) + sum [k=1:N] 2*real(Ck[k]*Heq(k*freq)*exp(j*k*w(freq)
 output(t) = Ck0*H(1e-6) + sum [k=1:N] 2*real(Ck[k]*H(k*freq)*exp(j*k*w(freq)*t)) 
 
 set title "input vs. output"
-f_label = sprintf("f=%.1f MHz   Zs=%d ohm", freq/1e6, Zs)
-set label f_label at graph 0.05,1.03
-set xrange [0:2*period]
-set yrange [-0.2:1.2]
-#set xtics axis in scale 1,0.1 20
-set ytics axis in scale 0.1,0.1 0.1
+set key noautotitles
 set grid
+f_label = sprintf("f=%.1f MHz   Zo=%d ohm  vf=%.2f len=%.2f m", freq/1e6, Zo, vf, len)
+set label 1 f_label at graph 0.05,1.03
+set xrange [0:2*period]
+set yrange [-0.7:1.2]
+set xtics border nomirror out scale 1,0.1 0.2*period
+set ytics axis in scale 0.1,0.1 0.1
+set xlabel "time"
 
-plot input(t), output(t) #, middle(t)
+plot input(t) title "input", output(t) title "output", middle(t) title "middle"
 
+
+set title "frequency response"
+unset label 1
+set xtics axis in scale 0.5,0.1 10
+set ytics border out scale 0.1,0.1 0.1
+set xrange [0:*]
+set yrange [0:1]
+set xlabel "Frequency in MHz"
+
+plot [0:300] abs(H(t*1e6)) title "output", abs(Heq(t*1e6)) title "middle"
 
 
 

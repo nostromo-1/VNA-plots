@@ -11,7 +11,7 @@ set samples 20000
 
 # define some functions
 even(n) = (n/2)*2==n  # only integers
-sinc(x) = sin(pi*x)/(pi*x)
+sinc(x) = (x==0)?1.0:sin(pi*x)/(pi*x)
 w(f) = 2*pi*f
 
 # define some constants
@@ -22,7 +22,7 @@ Zs = 50.0   # output impedance of VNA; the output voltage equivalent is Vs
 # Define a transmission line
 Zo = 50.0   # characteristic impedance of transmission line
 vf = 0.66   # velocity factor of transmission line
-len = 2.00  # length of transmission line in m
+len = 2.08  # length of transmission line in m
 #Res(f) = 15.38*((f/1e9)**0.482)   # ohm/m due to skin effect, twisted cable, https://ieeexplore.ieee.org/document/917765
 Res(f) = 0.1 + 6.2*((f/1e9)**0.5)   # ohm/m due to skin effect, RG58
 Vp = vf*c    # phase velocity in transmission line
@@ -53,7 +53,7 @@ Zin(f) = Zo * (1.0+gamma_Zin(f)) / (1.0-gamma_Zin(f))
 # Zeq is the equivalent impedance seen by the VNA at its output port
 # Zeq can be only Zin (the coax) or combined with another load Z (in parallel or series)
 #L1 = 45e-9
-#R1 = 5000
+#R1 = 50.0
 #C1 = 4.7e-9
 #Zamp(f) = R1 #+ j*w(f)*L1 + 1.0/(j*w(f)*C1) 
 #Yeq(f) = 1.0/Zin(f) + 1.0/Zamp(f) 
@@ -94,8 +94,8 @@ do for [k=1:N] {
 
 # calculate input signal input(t), signal at Zeq middle(t), signal at Zl output(t)
 input(t) = Ck0 + sum [k=1:N] 2*real(Ck[k]*exp(j*k*w(freq)*t)) 
-middle(t) = Ck0*Heq(1e-6) + sum [k=1:N] 2*real(Ck[k]*Heq(k*freq)*exp(j*k*w(freq)*t)) 
-output(t) = Ck0*H(1e-6) + sum [k=1:N] 2*real(Ck[k]*H(k*freq)*exp(j*k*w(freq)*t)) 
+middle(t) = Ck0*Heq(0) + sum [k=1:N] 2*real(Ck[k]*Heq(k*freq)*exp(j*k*w(freq)*t)) 
+output(t) = Ck0*H(0) + sum [k=1:N] 2*real(Ck[k]*H(k*freq)*exp(j*k*w(freq)*t)) 
 
 # draw plots
 set title "input vs. output"

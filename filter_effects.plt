@@ -4,46 +4,50 @@
 set terminal qt size 900,740 persist
 set multiplot layout 2,1 title "Effect of loaded transmission line on input signal"
 set dummy t
+set print "-"  # print output is stdout
 #unset key
 #unset border
 set samples 20000
 
+# define some functions
 even(n) = (n/2)*2==n  # only integers
 sinc(x) = sin(pi*x)/(pi*x)
+w(f) = 2*pi*f
 
-j = {0.0,1.0}  # imaginary unit
+# define some constants
+j = {0.0,1.0}    # imaginary unit
 c = 299792458.0  # speed of light in vacuum (m/s)
 Zs = 50.0   # output impedance of VNA; the output voltage equivalent is Vs
 
-# Define a transmission line, followed by a load Zl
+# Define a transmission line
 Zo = 50.0   # characteristic impedance of transmission line
 vf = 0.66   # velocity factor of transmission line
-len = 0.50  # length of transmission line in m
+len = 2.00  # length of transmission line in m
 #Res(f) = 15.38*((f/1e9)**0.482)   # ohm/m due to skin effect, twisted cable, https://ieeexplore.ieee.org/document/917765
 Res(f) = 0.1 + 6.2*((f/1e9)**0.5)   # ohm/m due to skin effect, RG58
 Vp = vf*c    # phase velocity in transmission line
 fl4 = Vp/(4*len)  # lambda/4 frequency of transmission line
-w(f) = 2*pi*f
+print "Frequency at which length of coax is lambda/4: ", fl4, " Hz"
 beta(f) = w(f)/Vp
 alfa(f) = Res(f)/(2.0*Zo) # Valid for G=0, R<<wL
 gamma_prop(f) = alfa(f) + j*beta(f)  # propagation constant of the transmission line
-att(f) = 20*log10(exp(1))*alfa(f*1e6)*100   # attenuation in dB/100m
+att(f) = 20*log10(exp(1))*alfa(f*1e6)*100   # attenuation in dB/100m, f in MHz
 # end of transmission line definition
 
 
 # Define the load circuit at coax end (Zl)
 C = 13e-12
 L = 10e-6
-R = 50.0
-Yl(f) = 1.0/R + (j*w(f)*C) #+ 1.0/(R+j*w(f)*L) #+ 1.0/220
-Zl(f) = 1.0/Yl(f)
-#Zl(f) = R+j*w(f)*L
-gammaZl(f) = (Zl(f)-Zo)/(Zl(f)+Zo)  # reflection coefficient at load
+R = 1e6 # 50.0
+#Yl(f) = 1.0/R + (j*w(f)*C) #+ 1.0/(R+j*w(f)*L) #+ 1.0/220
+#Zl(f) = 1.0/Yl(f)
+Zl(f) = R #+j*w(f)*L
+gamma_Zl(f) = (Zl(f)-Zo)/(Zl(f)+Zo)  # reflection coefficient at load
 # end of load circuit
 
 # calculate Zin at coax input
-gammaZin(f) = gammaZl(f) * exp(-2*gamma_prop(f)*len)
-Zin(f) = Zo * (1.0+gammaZin(f)) / (1.0-gammaZin(f))
+gamma_Zin(f) = gamma_Zl(f) * exp(-2*gamma_prop(f)*len)
+Zin(f) = Zo * (1.0+gamma_Zin(f)) / (1.0-gamma_Zin(f))
 
 # An impedance Z can be connected in parallel with the transmission line input
 # Zeq is the equivalent impedance seen by the VNA at its output port
@@ -58,35 +62,42 @@ Zeq(f) = Zin(f)
 #Zeq(f) = 1.0/Yeq(f)
 
 # Reflection coefficient S11 (gamma as seen by VNA)
-gammaVNA(f) = (Zeq(f)-Zs)/(Zeq(f)+Zs)
-# Transfer funtion at VNA output (or circuit output) (at Zeq): V(Zeq)/Vs
-Vratio_Zeq(f) = (1.0+gammaVNA(f))/2
-# Transfer function between coax output and input (at Zl): V(Zl)/V(Zeq)
-Vratio_coax(f) = (1.0+gammaZl(f))/(1.0+gammaZin(f)) * exp(-gamma_prop(f)*len)
-# Transfer function at coax output (at Zl): V(Zl)/Vs
+gamma_VNA(f) = (Zeq(f)-Zs)/(Zeq(f)+Zs)
+# Transfer funtion at VNA output (or circuit output) (ie, at Zeq): V(Zeq)/Vs
+Vratio_Zeq(f) = (1.0+gamma_VNA(f))/2
+# Transfer function between coax output and input (ie, at Zl): V(Zl)/V(Zeq)
+Vratio_coax(f) = (1.0+gamma_Zl(f))/(1.0+gamma_Zin(f)) * exp(-gamma_prop(f)*len)
+# Transfer function at coax output (ie, at Zl): V(Zl)/Vs
 Vratio_Zl(f) = Vratio_Zeq(f) * Vratio_coax(f)
 
-# Transfer function for graphic plot
+# Select transfer function for graphic plot
 H(f) = Vratio_Zl(f) 
 Heq(f) = Vratio_Zeq(f) 
 
-# define Fourier series coefficients
+# define complex Fourier series coefficients
 N = 30  # number of frequencies to sum in the signal
 array Ck[N]
-# define input signal: a square wave of duty cycle delta, amplitude 1
+# define input signal: a square wave of duty cycle delta, amplitude 0 or 1, frequency freq
+if (!exists("freq")) freq = 10e6   # fundamental frequency of input signal
 if (!exists("delta")) delta = 0.5  # duty cicle
+period = 1.0/freq
+
 Ck0 = delta
 do for [k=1:N] { 
         Ck[k] = delta*sinc(k*delta)*exp(-j*pi*k*delta)
 }
+# Apply LPF to square wave to reduce Gibbs effect
+LPF(f) = 1.0/(1+j*f/(10*freq))  # 3 dB frequency of filter is 10 times the input signal frequency 
+do for [k=1:N] { 
+        Ck[k] = Ck[k]*LPF(k*freq)
+}
 
-if (!exists("freq")) freq = 10e6  # fundamental frequency of input signal
-period = 1.0/freq
 # calculate input signal input(t), signal at Zeq middle(t), signal at Zl output(t)
 input(t) = Ck0 + sum [k=1:N] 2*real(Ck[k]*exp(j*k*w(freq)*t)) 
 middle(t) = Ck0*Heq(1e-6) + sum [k=1:N] 2*real(Ck[k]*Heq(k*freq)*exp(j*k*w(freq)*t)) 
 output(t) = Ck0*H(1e-6) + sum [k=1:N] 2*real(Ck[k]*H(k*freq)*exp(j*k*w(freq)*t)) 
 
+# draw plots
 set title "input vs. output"
 set key noautotitles
 set grid
@@ -98,18 +109,18 @@ set xtics border nomirror out scale 1,0.1 0.2*period
 set ytics axis in scale 0.1,0.1 0.1
 set xlabel "time"
 
-plot input(t) title "input", output(t) title "output", middle(t) title "middle"
+plot input(t) title "input", middle(t) title "middle"  lc rgb 'dark-grey', output(t) title "output" lc rgb 'blue' 
 
 
 set title "frequency response"
 unset label 1
 set xtics axis in scale 0.5,0.1 10
 set ytics border out scale 0.1,0.1 0.1
-set xrange [0:*]
+set xrange [0:300]
 set yrange [0:1]
 set xlabel "Frequency in MHz"
 
-plot [0:300] abs(H(t*1e6)) title "output", abs(Heq(t*1e6)) title "middle"
+plot abs(H(t*1e6)) title "output", abs(Heq(t*1e6)) title "middle"
 
 
 

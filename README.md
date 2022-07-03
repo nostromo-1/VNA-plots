@@ -18,7 +18,7 @@ The files are these:
  [![Output](https://github.com/nostromo-1/VNA-plots/blob/main/coax1.png)](https://github.com/nostromo-1/VNA-plots)
  
 
-* filter_effects.plt: It takes a square wave input signal and passes it through the circuit described above, displaying the input signal, the middle signal at Z, and the output signal at Zl. It does so by computing the Fourier coefficients of the input signal and applying them through the filter (which is the reference circuit above). All signals are calculated at a frequency which can be adjusted in the script, so you can see how different frequencies are affected. You can define any impedance for both Zl and Z, to simulate different circuits.
+* filter_effects.plt: It takes a square wave input signal and passes it through the circuit described above, displaying the input signal, the middle signal at Z, and the output signal at Zl at the upper graph, and the frequency response at Zl and Z at the lower graph. It does so by computing the Fourier coefficients of the input signal and applying them through the filter (which is the reference circuit above). All signals are calculated at a frequency which can be adjusted in the script, so you can see how different frequencies are affected. You can define any impedance for both Zl and Z, to simulate different circuits.
 
 An example of the output (it simulates a signal generator with a RG58 coax open at the other end):
 
